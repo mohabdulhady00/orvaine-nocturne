@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORVAINE — NOCTURNE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Manrope:wght@200;300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080b09;
+    --bg-2:#0c110e;
+    --ink:#eef2ec;
+    --ink-dim:#7e8a80;
+    --accent:#c9f24b;
+    --acid-ink:#0d1206;
+    --hairline:rgba(201,242,75,.16);
+    --serif:'Italiana',serif;
+    --sans:'Manrope',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scrollbar-width:thin;scrollbar-color:#22302a transparent}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:300;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--accent);color:var(--bg)}
+
+  /* ---------- loader ---------- */
+  #loader{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:1.4rem;transition:opacity .9s ease;}
+  #loader.done{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .9s ease,visibility 0s .95s}
+  #loader .mark{font-family:var(--serif);font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:.55em;text-indent:.55em;color:var(--ink)}
+  #loader .pct{font-size:.65rem;letter-spacing:.4em;text-indent:.4em;color:var(--ink-dim)}
+  #loader .bar{width:min(220px,50vw);height:1px;background:var(--hairline);overflow:hidden}
+  #loader .bar i{display:block;height:100%;width:0%;background:var(--accent);transition:width .25s ease}
+
+  /* ---------- nav ---------- */
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+    padding:1.6rem clamp(1.4rem,4vw,3.2rem);mix-blend-mode:difference;opacity:0}
+  nav .wordmark{font-family:var(--serif);font-size:1.05rem;letter-spacing:.5em;text-indent:.5em;color:#fff;text-decoration:none}
+  nav a.cta{font-size:.6rem;letter-spacing:.35em;text-indent:.35em;text-transform:uppercase;color:#fff;text-decoration:none;
+    border-bottom:1px solid rgba(255,255,255,.35);padding-bottom:.35rem}
+
+  /* ---------- canvas sections ---------- */
+  .seq{position:relative;height:100vh;overflow:hidden}
+  .seq canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .seq .veil{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,13,11,.55) 100%)}
+
+  /* ---------- hero ---------- */
+  #hero .title{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;z-index:3}
+  #hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.4rem,9vw,9.5rem);line-height:1;
+    letter-spacing:.18em;text-indent:.18em;color:var(--ink);white-space:nowrap}
+  #hero h1 span{display:inline-block}
+  #hero .model{margin-top:1.6rem;font-size:.7rem;letter-spacing:.6em;text-indent:.6em;text-transform:uppercase;color:var(--accent)}
+  #hero .tag{margin-top:2.6rem;font-size:.78rem;letter-spacing:.12em;color:var(--ink-dim)}
+  #hero .cue{position:absolute;bottom:2.4rem;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:.9rem}
+  #hero .cue span{font-size:.55rem;letter-spacing:.45em;text-indent:.45em;text-transform:uppercase;color:var(--ink-dim)}
+  #hero .cue i{width:1px;height:44px;background:linear-gradient(var(--accent),transparent);display:block;animation:drip 2.2s ease-in-out infinite}
+  @keyframes drip{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ---------- prose sections ---------- */
+  .prose{position:relative;padding:32vh clamp(1.4rem,6vw,4rem);display:flex;flex-direction:column;align-items:center;gap:9rem;background:var(--bg)}
+  .prose .line{max-width:30ch;text-align:center;font-family:var(--serif);font-weight:400;
+    font-size:clamp(1.7rem,3.6vw,3.1rem);line-height:1.35;color:var(--ink)}
+  .prose .line em{font-style:normal;color:var(--accent)}
+  .prose .kicker{font-family:var(--sans);font-size:.6rem;letter-spacing:.5em;text-indent:.5em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:-6.5rem}
+
+  /* ---------- overlay copy on canvas sections ---------- */
+  .overlay-copy{position:absolute;z-index:3;opacity:0}
+  .overlay-copy .n{font-size:.55rem;letter-spacing:.4em;text-indent:.4em;color:var(--accent);display:block;margin-bottom:.9rem}
+  .overlay-copy p{font-family:var(--serif);font-size:clamp(1.2rem,2.4vw,1.9rem);line-height:1.4;max-width:22ch}
+  #macro .oc-1{left:clamp(1.4rem,7vw,6rem);top:22%}
+  #macro .oc-2{right:clamp(1.4rem,7vw,6rem);top:38%;text-align:right}
+  #macro .oc-2 p{margin-left:auto}
+  #macro .oc-3{left:clamp(1.4rem,7vw,6rem);bottom:18%}
+
+  /* ---------- exploded spec callouts ---------- */
+  #exploded .spec{position:absolute;z-index:3;opacity:0}
+  #exploded .spec .v{font-family:var(--serif);font-size:clamp(1.9rem,4vw,3.4rem);color:var(--ink);line-height:1}
+  #exploded .spec .k{margin-top:.7rem;font-size:.58rem;letter-spacing:.35em;text-indent:.35em;text-transform:uppercase;color:var(--ink-dim)}
+  #exploded .sp-1{left:clamp(1.4rem,6vw,5rem);top:20%}
+  #exploded .sp-2{right:clamp(1.4rem,6vw,5rem);top:30%;text-align:right}
+  #exploded .sp-3{left:clamp(1.4rem,6vw,5rem);bottom:22%}
+  #exploded .sp-4{right:clamp(1.4rem,6vw,5rem);bottom:14%;text-align:right}
+  #exploded .sec-title{position:absolute;z-index:3;left:50%;top:9%;transform:translateX(-50%);text-align:center;opacity:0}
+  #exploded .sec-title .n{font-size:.55rem;letter-spacing:.5em;text-indent:.5em;text-transform:uppercase;color:var(--accent)}
+  #exploded .sec-title h2{margin-top:1rem;font-family:var(--serif);font-weight:400;font-size:clamp(1.6rem,3vw,2.6rem)}
+
+  /* ---------- edition ---------- */
+  #edition{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2.6rem;background:var(--bg-2);position:relative;padding:20vh 1.5rem;text-align:center}
+  #edition::before{content:"";position:absolute;top:0;left:50%;width:1px;height:18vh;background:linear-gradient(transparent,var(--hairline))}
+  #edition .n{font-size:.6rem;letter-spacing:.5em;text-indent:.5em;text-transform:uppercase;color:var(--accent)}
+  #edition .num{font-family:var(--serif);font-size:clamp(4rem,14vw,11rem);line-height:1;color:var(--ink)}
+  #edition .price{font-family:var(--serif);font-size:clamp(1.4rem,3vw,2.2rem);color:var(--ink-dim)}
+  #edition .note{font-size:.75rem;letter-spacing:.14em;color:var(--ink-dim)}
+
+  /* ---------- waitlist ---------- */
+  #waitlist{min-height:92vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3.4rem;padding:16vh 1.5rem 10vh;text-align:center;position:relative}
+  #waitlist h2{font-family:var(--serif);font-weight:400;font-size:clamp(2.2rem,6vw,4.6rem);line-height:1.15}
+  #waitlist form{display:flex;gap:0;width:min(480px,88vw);border-bottom:1px solid var(--hairline)}
+  #waitlist input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-family:var(--sans);
+    font-weight:300;font-size:.85rem;letter-spacing:.08em;padding:1rem .2rem}
+  #waitlist input::placeholder{color:var(--ink-dim)}
+  #waitlist button{background:none;border:none;cursor:pointer;color:var(--accent);font-family:var(--sans);
+    font-size:.6rem;letter-spacing:.35em;text-indent:.35em;text-transform:uppercase;padding:1rem .2rem;transition:opacity .3s}
+  #waitlist button:hover{opacity:.6}
+  #waitlist .fine{font-size:.62rem;letter-spacing:.22em;color:var(--ink-dim)}
+  footer{display:flex;justify-content:space-between;align-items:center;padding:2.2rem clamp(1.4rem,4vw,3.2rem);
+    border-top:1px solid var(--hairline);font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-dim)}
+
+  .reveal{opacity:0;transform:translateY(34px)}
+
+  /* ---------- acid layer ---------- */
+  #loader .pct, nav a.cta, #hero .cue span, .prose .kicker, .overlay-copy .n,
+  #exploded .spec .k, #exploded .sec-title .n, #edition .n, #edition .note,
+  #waitlist .fine, #waitlist button, footer { font-family:var(--mono) }
+
+  #grain{position:fixed;inset:-60%;z-index:95;pointer-events:none;opacity:.08;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='260' height='260' filter='url(%23n)' opacity='0.65'/></svg>");
+    animation:grain 7s steps(9) infinite}
+  @keyframes grain{
+    0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}
+    60%{transform:translate(-2%,-2%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+
+  .ticker{overflow:hidden;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);
+    padding:1.15rem 0;background:var(--bg)}
+  .ticker .track{display:flex;white-space:nowrap;width:max-content;animation:tick 30s linear infinite}
+  .ticker span{font-family:var(--mono);font-size:.6rem;letter-spacing:.45em;text-transform:uppercase;color:var(--accent);padding-right:4.5rem}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  #edition{background:var(--accent)}
+  #edition::before{background:linear-gradient(transparent,rgba(13,18,6,.55))}
+  #edition .n,#edition .num,#edition .price,#edition .note{color:var(--acid-ink)}
+  #edition .price{opacity:.72}
+  #edition ::selection{background:var(--acid-ink);color:var(--accent)}
+
+  #waitlist input{caret-color:var(--accent)}
+
+  @media (max-width:700px){
+    #macro .oc-2{top:auto;bottom:38%}
+    #exploded .sp-2{top:22%}
+    footer{flex-direction:column;gap:1rem}
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="mark">ORVAINE</div>
+  <div class="bar"><i id="loadbar"></i></div>
+  <div class="pct" id="loadpct">0</div>
+</div>
+
+<div id="grain"></div>
+
+<nav id="nav">
+  <a class="wordmark" href="#hero">ORVAINE</a>
+  <a class="cta" href="#waitlist">Private Waitlist</a>
+</nav>
+
+<!-- 01 · HERO ORBIT -->
+<section class="seq" id="hero">
+  <canvas id="cv-orbit"></canvas>
+  <div class="veil"></div>
+  <div class="title">
+    <h1 id="brand"><span>O</span><span>R</span><span>V</span><span>A</span><span>I</span><span>N</span><span>E</span></h1>
+    <div class="model reveal">Nocturne</div>
+    <div class="tag reveal">The quiet instrument.</div>
+  </div>
+  <div class="cue"><span>Scroll</span><i></i></div>
+</section>
+
+<!-- 02 · BRAND STORY -->
+<section class="prose" id="story">
+  <div class="kicker reveal">Maison d'Acoustique</div>
+  <div class="line reveal">A private acoustics house.</div>
+  <div class="line reveal">One instrument a year.<br>Never two.</div>
+  <div class="line reveal">This year — <em>Nocturne.</em></div>
+</section>
+
+<div class="ticker" aria-hidden="true">
+  <div class="track">
+    <span>Nocturne — Edition of 300 — Geneva — 50&nbsp;mm planar — 72&nbsp;h reserve — 217 components — Numbered by hand —</span>
+    <span>Nocturne — Edition of 300 — Geneva — 50&nbsp;mm planar — 72&nbsp;h reserve — 217 components — Numbered by hand —</span>
+  </div>
+</div>
+
+<!-- 03 · MACRO FLY-THROUGH -->
+<section class="seq" id="macro">
+  <canvas id="cv-macro"></canvas>
+  <div class="overlay-copy oc-1"><span class="n">I</span><p>Zirconium, bead-blasted for eleven hours.</p></div>
+  <div class="overlay-copy oc-2"><span class="n">II</span><p>Jade ceramic, ground over three days.</p></div>
+  <div class="overlay-copy oc-3"><span class="n">III</span><p>Leather, cut from a single hide.</p></div>
+</section>
+
+<!-- 04 · EXPLODED ENGINEERING -->
+<section class="seq" id="exploded">
+  <canvas id="cv-exploded"></canvas>
+  <div class="sec-title"><span class="n">Engineering</span><h2>Nothing hidden.</h2></div>
+  <div class="spec sp-1"><div class="v">50 mm</div><div class="k">Planar-magnetic drivers</div></div>
+  <div class="spec sp-2"><div class="v">72 h</div><div class="k">Reserve</div></div>
+  <div class="spec sp-3"><div class="v">217</div><div class="k">Components</div></div>
+  <div class="spec sp-4"><div class="v">312 g</div><div class="k">On the head</div></div>
+</section>
+
+<!-- 05 · EDITION -->
+<section id="edition">
+  <div class="n reveal">Limited edition</div>
+  <div class="num reveal">300</div>
+  <div class="price reveal">€ 7,900</div>
+  <div class="note reveal">Each numbered by hand. None re-issued.</div>
+</section>
+
+<!-- 06 · WAITLIST -->
+<section id="waitlist">
+  <h2 class="reveal">The list is private.</h2>
+  <form class="reveal" onsubmit="event.preventDefault();this.outerHTML='<div class=fine style=letter-spacing:.3em>WE WILL WRITE TO YOU.</div>';">
+    <input type="email" required placeholder="Your email" aria-label="Email">
+    <button type="submit">Request a place</button>
+  </form>
+  <div class="fine reveal">Allocations are confirmed by letter.</div>
+</section>
+
+<footer>
+  <span>Orvaine — Maison d'Acoustique</span>
+  <span>Geneva · Est. 1987</span>
+  <span>© 2026</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ================= frame sequences ================= */
+const SEQS = {
+  orbit:    { path:'frames/orbit/',    count: 193, canvas: document.getElementById('cv-orbit') },
+  macro:    { path:'frames/macro/',    count: 193, canvas: document.getElementById('cv-macro') },
+  exploded: { path:'frames/exploded/', count: 193, canvas: document.getElementById('cv-exploded') },
+};
+
+for (const s of Object.values(SEQS)) {
+  s.imgs = new Array(s.count).fill(null);
+  s.loaded = 0;
+  s.frame = 0;
+  s.ctx = s.canvas.getContext('2d');
+}
+
+function src(seq, i){ return seq.path + String(i + 1).padStart(4, '0') + '.webp'; }
+
+function loadSeq(seq, onProgress){
+  return new Promise(resolve => {
+    let done = 0;
+    for (let i = 0; i < seq.count; i++){
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        if (img.naturalWidth) seq.imgs[i] = img;
+        seq.loaded++; done++;
+        if (onProgress) onProgress(done / seq.count);
+        if (i === Math.round(seq.frame)) draw(seq);
+        if (done === seq.count) resolve();
+      };
+      img.src = src(seq, i);
+    }
+  });
+}
+
+function nearestLoaded(seq, i){
+  if (seq.imgs[i]) return seq.imgs[i];
+  for (let d = 1; d < seq.count; d++){
+    if (seq.imgs[i - d]) return seq.imgs[i - d];
+    if (seq.imgs[i + d]) return seq.imgs[i + d];
+  }
+  return null;
+}
+
+function sizeCanvas(seq){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = seq.canvas.clientWidth, h = seq.canvas.clientHeight;
+  if (seq.canvas.width !== w * dpr || seq.canvas.height !== h * dpr){
+    seq.canvas.width = w * dpr; seq.canvas.height = h * dpr;
+  }
+}
+
+function draw(seq){
+  sizeCanvas(seq);
+  const img = nearestLoaded(seq, Math.round(seq.frame));
+  if (!img) return;
+  const cw = seq.canvas.width, ch = seq.canvas.height;
+  const s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+  const w = img.naturalWidth * s, h = img.naturalHeight * s;
+  seq.ctx.clearRect(0, 0, cw, ch);
+  seq.ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+}
+
+window.addEventListener('resize', () => Object.values(SEQS).forEach(draw));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    ScrollTrigger.refresh();
+    Object.values(SEQS).forEach(draw);
+  }
+});
+
+/* ================= smooth scroll ================= */
+const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add(t => lenis.raf(t * 1000));
+gsap.ticker.lagSmoothing(0);
+
+/* ================= scroll choreography ================= */
+function scrubSection(id, seq, buildExtras, endLen){
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: id, start: 'top top', end: '+=' + (endLen || '300%'),
+      scrub: true, pin: true, anticipatePin: 1,
+    }
+  });
+  tl.to(seq, { frame: seq.count - 1, ease: 'none', duration: 1,
+    onUpdate: () => draw(seq) }, 0);
+  if (buildExtras) buildExtras(tl);
+  return tl;
+}
+
+/* --- 01 hero: orbit scrub; title recedes as you scroll --- */
+scrubSection('#hero', SEQS.orbit, tl => {
+  tl.to('#hero .title', { opacity: 0, y: -60, ease: 'none', duration: .28 }, .08);
+  tl.to('#hero .cue',   { opacity: 0, ease: 'none', duration: .1 }, 0);
+}, '260%');
+
+/* --- 03 macro: fly-through with copy stations --- */
+scrubSection('#macro', SEQS.macro, tl => {
+  const oc = ['.oc-1', '.oc-2', '.oc-3'];
+  oc.forEach((sel, i) => {
+    const at = .1 + i * .3;
+    tl.fromTo('#macro ' + sel, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: .1, ease: 'none' }, at);
+    tl.to('#macro ' + sel, { opacity: 0, y: -26, duration: .08, ease: 'none' }, at + .2);
+  });
+}, '320%');
+
+/* --- 04 exploded: assembly scrub; specs land as parts converge --- */
+scrubSection('#exploded', SEQS.exploded, tl => {
+  tl.fromTo('#exploded .sec-title', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .08, ease: 'none' }, .04);
+  ['.sp-1', '.sp-2', '.sp-3', '.sp-4'].forEach((sel, i) => {
+    tl.fromTo('#exploded ' + sel, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .09, ease: 'none' }, .3 + i * .14);
+  });
+  tl.to('#exploded .sec-title', { opacity: 0, duration: .06, ease: 'none' }, .92);
+}, '360%');
+
+/* --- static reveals (story, edition, waitlist) --- */
+document.querySelectorAll('.prose .reveal, #edition .reveal, #waitlist .reveal').forEach(el => {
+  gsap.to(el, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 82%' } });
+});
+
+/* ================= boot ================= */
+const bar = document.getElementById('loadbar');
+const pct = document.getElementById('loadpct');
+
+function intro(){
+  document.getElementById('loader').classList.add('done');
+  const letters = '#brand span';
+  gsap.fromTo(letters, { opacity: 0, x: i => (i - 3) * 60 },
+    { opacity: 1, x: 0, duration: 1.6, ease: 'power4.out', stagger: { each: .05, from: 'center' } });
+  gsap.to('#nav', { opacity: 1, duration: 1.2, delay: .9 });
+  gsap.to('#hero .reveal', { opacity: 1, y: 0, duration: 1.2, delay: .7, stagger: .18, ease: 'power3.out' });
+  draw(SEQS.orbit);
+}
+
+loadSeq(SEQS.orbit, p => {
+  const v = Math.round(p * 100);
+  bar.style.width = v + '%';
+  pct.textContent = v;
+}).then(() => {
+  intro();
+  loadSeq(SEQS.macro).then(() => loadSeq(SEQS.exploded));
+});
+</script>
+</body>
+</html>
