@@ -315,7 +315,7 @@ function scrubSection(id, seq, buildExtras, endLen){
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: id, start: 'top top', end: '+=' + (endLen || '300%'),
-      scrub: true, pin: true, anticipatePin: 1,
+      scrub: 0.7, pin: true, anticipatePin: 1,
     }
   });
   tl.to(seq, { frame: seq.count - 1, ease: 'none', duration: 1,
