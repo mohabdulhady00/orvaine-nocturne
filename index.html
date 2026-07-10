@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ORVAINE — NOCTURNE</title>
+<meta name="description" content="ORVAINE, Maison d'Acoustique. NOCTURNE — one instrument a year. 50 mm planar-magnetic drivers, 72 h reserve, 217 components. Edition of 300.">
+<meta property="og:title" content="ORVAINE — NOCTURNE">
+<meta property="og:description" content="A private acoustics house. One instrument a year. Edition of 300.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://raw.githubusercontent.com/mohabdulhady00/orvaine-nocturne/main/hero_ref.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23080b09'/><text x='50' y='72' font-family='Georgia,serif' font-size='64' fill='%23c9f24b' text-anchor='middle'>O</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Manrope:wght@200;300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -42,7 +49,7 @@
     border-bottom:1px solid rgba(255,255,255,.35);padding-bottom:.35rem}
 
   /* ---------- canvas sections ---------- */
-  .seq{position:relative;height:100vh;overflow:hidden}
+  .seq{position:relative;height:100vh;height:100svh;overflow:hidden}
   .seq canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   .seq .veil{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,13,11,.55) 100%)}
 
@@ -138,6 +145,17 @@
 
   #waitlist input{caret-color:var(--accent)}
 
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:1px solid var(--accent);outline-offset:3px}
+
+  #progress{position:fixed;top:0;right:0;width:2px;height:100vh;height:100svh;z-index:60;background:rgba(201,242,75,.08)}
+  #progress i{display:block;width:100%;height:100%;background:var(--accent);transform:scaleY(0);transform-origin:top}
+
+  @media (prefers-reduced-motion: reduce){
+    #grain{animation:none}
+    .ticker .track{animation:none}
+    #hero .cue i{animation:none}
+  }
+
   @media (max-width:700px){
     #macro .oc-2{top:auto;bottom:38%}
     #exploded .sp-2{top:22%}
@@ -154,6 +172,7 @@
 </div>
 
 <div id="grain"></div>
+<div id="progress" aria-hidden="true"><i></i></div>
 
 <nav id="nav">
   <a class="wordmark" href="#hero">ORVAINE</a>
@@ -234,12 +253,13 @@
 <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
 <script>
 gsap.registerPlugin(ScrollTrigger);
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ================= frame sequences ================= */
 const SEQS = {
   orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
   macro:    { path:'frames/macro/',    count: 450, canvas: document.getElementById('cv-macro') },
-  exploded: { path:'frames/exploded/', count: 193, canvas: document.getElementById('cv-exploded') },
+  exploded: { path:'frames/exploded/', count: 450, canvas: document.getElementById('cv-exploded') },
 };
 
 for (const s of Object.values(SEQS)) {
@@ -252,7 +272,8 @@ for (const s of Object.values(SEQS)) {
 function src(seq, i){ return seq.path + String(i + 1).padStart(4, '0') + '.webp'; }
 
 function loadSeq(seq, onProgress){
-  return new Promise(resolve => {
+  if (seq.promise) return seq.promise;
+  return seq.promise = new Promise(resolve => {
     let done = 0;
     for (let i = 0; i < seq.count; i++){
       const img = new Image();
@@ -305,17 +326,20 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ================= smooth scroll ================= */
-const lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
-lenis.on('scroll', ScrollTrigger.update);
-gsap.ticker.add(t => lenis.raf(t * 1000));
-gsap.ticker.lagSmoothing(0);
+let lenis = null;
+if (!REDUCED) {
+  lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(t => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
 
 /* ================= scroll choreography ================= */
 function scrubSection(id, seq, buildExtras, endLen){
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: id, start: 'top top', end: '+=' + (endLen || '300%'),
-      scrub: 0.7, pin: true, anticipatePin: 1,
+      scrub: REDUCED ? true : 0.7, pin: true, anticipatePin: 1,
     }
   });
   tl.to(seq, { frame: seq.count - 1, ease: 'none', duration: 1,
@@ -347,13 +371,22 @@ scrubSection('#exploded', SEQS.exploded, tl => {
     tl.fromTo('#exploded ' + sel, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .09, ease: 'none' }, .3 + i * .14);
   });
   tl.to('#exploded .sec-title', { opacity: 0, duration: .06, ease: 'none' }, .92);
-}, '360%');
+}, '460%');
 
 /* --- static reveals (story, edition, waitlist) --- */
 document.querySelectorAll('.prose .reveal, #edition .reveal, #waitlist .reveal').forEach(el => {
+  if (REDUCED) { gsap.set(el, { opacity: 1, y: 0 }); return; }
   gsap.to(el, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out',
     scrollTrigger: { trigger: el, start: 'top 82%' } });
 });
+
+/* --- scroll progress --- */
+gsap.to('#progress i', { scaleY: 1, ease: 'none',
+  scrollTrigger: { start: 0, end: 'max', scrub: true } });
+
+/* --- proximity preloading (backstop for fast scrollers) --- */
+ScrollTrigger.create({ trigger: '#story', start: 'top bottom', once: true, onEnter: () => loadSeq(SEQS.macro) });
+ScrollTrigger.create({ trigger: '.ticker', start: 'top bottom', once: true, onEnter: () => loadSeq(SEQS.exploded) });
 
 /* ================= boot ================= */
 const bar = document.getElementById('loadbar');
@@ -361,6 +394,13 @@ const pct = document.getElementById('loadpct');
 
 function intro(){
   document.getElementById('loader').classList.add('done');
+  if (REDUCED) {
+    gsap.set('#brand span', { opacity: 1, x: 0 });
+    gsap.set('#nav', { opacity: 1 });
+    gsap.set('#hero .reveal', { opacity: 1, y: 0 });
+    draw(SEQS.orbit);
+    return;
+  }
   const letters = '#brand span';
   gsap.fromTo(letters, { opacity: 0, x: i => (i - 3) * 60 },
     { opacity: 1, x: 0, duration: 1.6, ease: 'power4.out', stagger: { each: .05, from: 'center' } });
