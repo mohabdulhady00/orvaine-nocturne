@@ -237,7 +237,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 /* ================= frame sequences ================= */
 const SEQS = {
-  orbit:    { path:'frames/orbit/',    count: 193, canvas: document.getElementById('cv-orbit') },
+  orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
   macro:    { path:'frames/macro/',    count: 193, canvas: document.getElementById('cv-macro') },
   exploded: { path:'frames/exploded/', count: 193, canvas: document.getElementById('cv-exploded') },
 };
@@ -328,7 +328,7 @@ function scrubSection(id, seq, buildExtras, endLen){
 scrubSection('#hero', SEQS.orbit, tl => {
   tl.to('#hero .title', { opacity: 0, y: -60, ease: 'none', duration: .28 }, .08);
   tl.to('#hero .cue',   { opacity: 0, ease: 'none', duration: .1 }, 0);
-}, '260%');
+}, '380%');
 
 /* --- 03 macro: fly-through with copy stations --- */
 scrubSection('#macro', SEQS.macro, tl => {
@@ -369,12 +369,20 @@ function intro(){
   draw(SEQS.orbit);
 }
 
+let introDone = false;
+function startIntro(){
+  if (introDone) return;
+  introDone = true;
+  bar.style.width = '100%';
+  intro();
+}
 loadSeq(SEQS.orbit, p => {
   const v = Math.round(p * 100);
   bar.style.width = v + '%';
   pct.textContent = v;
+  if (p >= 0.4) startIntro(); // enough runway to scrub while the rest streams in
 }).then(() => {
-  intro();
+  startIntro();
   loadSeq(SEQS.macro).then(() => loadSeq(SEQS.exploded));
 });
 </script>
