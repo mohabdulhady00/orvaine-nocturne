@@ -256,6 +256,11 @@ gsap.registerPlugin(ScrollTrigger);
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ================= frame sequences ================= */
+const VER = '4'; // bump when frame files are replaced (pairs with immutable CDN caching)
+const conn = navigator.connection || {};
+const LIGHT = window.matchMedia('(max-width: 820px)').matches ||
+  conn.saveData === true || /(^|\b)2g/.test(conn.effectiveType || '');
+
 const SEQS = {
   orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
   macro:    { path:'frames/macro/',    count: 450, canvas: document.getElementById('cv-macro') },
@@ -263,13 +268,15 @@ const SEQS = {
 };
 
 for (const s of Object.values(SEQS)) {
+  s.step = LIGHT ? 2 : 1;              // phones / save-data: every 2nd frame, half the bytes
+  s.count = LIGHT ? Math.ceil(s.count / 2) : s.count;
   s.imgs = new Array(s.count).fill(null);
   s.loaded = 0;
   s.frame = 0;
   s.ctx = s.canvas.getContext('2d');
 }
 
-function src(seq, i){ return seq.path + String(i + 1).padStart(4, '0') + '.webp'; }
+function src(seq, i){ return seq.path + String(i * seq.step + 1).padStart(4, '0') + '.webp?v=' + VER; }
 
 function loadSeq(seq, onProgress){
   if (seq.promise) return seq.promise;
