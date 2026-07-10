@@ -264,7 +264,7 @@ const LIGHT = window.matchMedia('(max-width: 820px)').matches ||
 const SEQS = {
   orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
   macro:    { path:'frames/macro/',    count: 450, canvas: document.getElementById('cv-macro') },
-  exploded: { path:'frames/exploded/', count: 450, canvas: document.getElementById('cv-exploded') },
+  exploded: { path:'frames/exploded/', count: 450, canvas: document.getElementById('cv-exploded'), wideSafe: true },
 };
 
 for (const s of Object.values(SEQS)) {
@@ -318,7 +318,10 @@ function draw(seq){
   const img = nearestLoaded(seq, Math.round(seq.frame));
   if (!img) return;
   const cw = seq.canvas.width, ch = seq.canvas.height;
-  const s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+  let s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+  // wide compositions on portrait screens: zoom out to keep >=50% of the frame width
+  // visible (frame edges are void, so the letterbox blends into the page background)
+  if (seq.wideSafe && ch > cw) s = Math.min(s, cw / (img.naturalWidth * 0.5));
   const w = img.naturalWidth * s, h = img.naturalHeight * s;
   seq.ctx.clearRect(0, 0, cw, ch);
   seq.ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
