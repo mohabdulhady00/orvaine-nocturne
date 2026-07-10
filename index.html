@@ -238,7 +238,7 @@ gsap.registerPlugin(ScrollTrigger);
 /* ================= frame sequences ================= */
 const SEQS = {
   orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
-  macro:    { path:'frames/macro/',    count: 193, canvas: document.getElementById('cv-macro') },
+  macro:    { path:'frames/macro/',    count: 450, canvas: document.getElementById('cv-macro') },
   exploded: { path:'frames/exploded/', count: 193, canvas: document.getElementById('cv-exploded') },
 };
 
@@ -338,7 +338,7 @@ scrubSection('#macro', SEQS.macro, tl => {
     tl.fromTo('#macro ' + sel, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: .1, ease: 'none' }, at);
     tl.to('#macro ' + sel, { opacity: 0, y: -26, duration: .08, ease: 'none' }, at + .2);
   });
-}, '320%');
+}, '420%');
 
 /* --- 04 exploded: assembly scrub; specs land as parts converge --- */
 scrubSection('#exploded', SEQS.exploded, tl => {
