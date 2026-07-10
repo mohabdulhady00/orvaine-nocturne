@@ -161,6 +161,12 @@
     #exploded .sp-2{top:22%}
     footer{flex-direction:column;gap:1rem}
   }
+
+  /* portrait: frames sit in a letterbox band (seams feathered on-canvas) */
+  @media (orientation:portrait){
+    #hero .title{top:24%}
+    #hero h1{white-space:normal}
+  }
 </style>
 </head>
 <body>
@@ -261,10 +267,12 @@ const conn = navigator.connection || {};
 const LIGHT = window.matchMedia('(max-width: 820px)').matches ||
   conn.saveData === true || /(^|\b)2g/.test(conn.effectiveType || '');
 
+// pFill = minimum fraction of the frame's width kept visible on portrait screens.
+// The frame edges are void, so what falls outside is letterboxed into the page background.
 const SEQS = {
-  orbit:    { path:'frames/orbit/',    count: 450, canvas: document.getElementById('cv-orbit') },
-  macro:    { path:'frames/macro/',    count: 450, canvas: document.getElementById('cv-macro') },
-  exploded: { path:'frames/exploded/', count: 450, canvas: document.getElementById('cv-exploded'), wideSafe: true },
+  orbit:    { path:'frames/orbit/',    count: 450, pFill: 0.62, canvas: document.getElementById('cv-orbit') },
+  macro:    { path:'frames/macro/',    count: 450, pFill: 0.55, canvas: document.getElementById('cv-macro') },
+  exploded: { path:'frames/exploded/', count: 450, pFill: 0.90, canvas: document.getElementById('cv-exploded') },
 };
 
 for (const s of Object.values(SEQS)) {
@@ -277,6 +285,9 @@ for (const s of Object.values(SEQS)) {
 }
 
 function src(seq, i){ return seq.path + String(i * seq.step + 1).padStart(4, '0') + '.webp?v=' + VER; }
+
+const BG = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#080b09';
+const BG_T = 'rgba(8,11,9,0)';
 
 function loadSeq(seq, onProgress){
   if (seq.promise) return seq.promise;
@@ -319,12 +330,24 @@ function draw(seq){
   if (!img) return;
   const cw = seq.canvas.width, ch = seq.canvas.height;
   let s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-  // wide compositions on portrait screens: zoom out to keep >=50% of the frame width
-  // visible (frame edges are void, so the letterbox blends into the page background)
-  if (seq.wideSafe && ch > cw) s = Math.min(s, cw / (img.naturalWidth * 0.5));
+  if (ch > cw && seq.pFill) s = Math.min(s, cw / (img.naturalWidth * seq.pFill));
   const w = img.naturalWidth * s, h = img.naturalHeight * s;
+  const top = (ch - h) / 2;
   seq.ctx.clearRect(0, 0, cw, ch);
-  seq.ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+  seq.ctx.drawImage(img, (cw - w) / 2, top, w, h);
+
+  // letterboxed: feather the frame's edges into the page background so no seam shows
+  if (h < ch - 1) {
+    const f = Math.min(h * 0.3, 90 * (ch / seq.canvas.clientHeight || 1));
+    const fade = (y0, y1) => {
+      const g = seq.ctx.createLinearGradient(0, y0, 0, y1);
+      g.addColorStop(0, BG); g.addColorStop(1, BG_T);
+      seq.ctx.fillStyle = g;
+      seq.ctx.fillRect(0, Math.min(y0, y1), cw, Math.abs(y1 - y0));
+    };
+    fade(top, top + f);
+    fade(top + h, top + h - f);
+  }
 }
 
 window.addEventListener('resize', () => Object.values(SEQS).forEach(draw));
