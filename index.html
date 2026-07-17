@@ -326,43 +326,15 @@ function sizeCanvas(seq){
 
 function draw(seq){
   sizeCanvas(seq);
-  const count = seq.count;
-  let idx = seq.frame + (seq.drift || 0);
-  idx = seq.loop ? ((idx % count) + count) % count : Math.max(0, Math.min(idx, count - 1));
-  const i0 = Math.floor(idx);
-  const i1 = seq.loop ? (i0 + 1) % count : Math.min(i0 + 1, count - 1);
-  const t  = idx - i0;
-  const img = nearestLoaded(seq, i0);
+  const img = nearestLoaded(seq, Math.round(seq.frame));
   if (!img) return;
   const cw = seq.canvas.width, ch = seq.canvas.height;
   let s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
   if (ch > cw && seq.pFill) s = Math.min(s, cw / (img.naturalWidth * seq.pFill));
   const w = img.naturalWidth * s, h = img.naturalHeight * s;
-  const x = (cw - w) / 2, top = (ch - h) / 2;
-  const cover = h >= ch - 1;
-  const ctx = seq.ctx;
-
-  // scroll-velocity motion trail (full-bleed only; letterbox always clears)
-  const now = performance.now();
-  const v = seq._lt !== undefined ? Math.abs(idx - seq._li) / Math.max(now - seq._lt, 1) : 0;
-  seq._li = idx; seq._lt = now;
-  const trail = (cover && !REDUCED) ? Math.min(v * 0.9, 0.4) : 0;
-
-  if (!cover || !trail) ctx.clearRect(0, 0, cw, ch);
-  ctx.globalAlpha = 1 - trail;
-  ctx.drawImage(img, x, top, w, h);
-  // sub-frame crossfade: blend the next frame by the fractional scroll position
-  if (t > 0.02) {
-    const b = nearestLoaded(seq, i1);
-    if (b && b !== img) { ctx.globalAlpha = (1 - trail) * t; ctx.drawImage(b, x, top, w, h); }
-  }
-  ctx.globalAlpha = 1;
-
-  // decode-ahead so upcoming frames never decode-jank on first display
-  for (const d of [3, 9]) {
-    const n = seq.imgs[seq.loop ? (i0 + d) % count : i0 + d];
-    if (n && n.decode) n.decode().catch(() => {});
-  }
+  const top = (ch - h) / 2;
+  seq.ctx.clearRect(0, 0, cw, ch);
+  seq.ctx.drawImage(img, (cw - w) / 2, top, w, h);
 
   // letterboxed: feather the frame's edges into the page background so no seam shows
   if (h < ch - 1) {
@@ -433,22 +405,6 @@ scrubSection('#exploded', SEQS.exploded, tl => {
   });
   tl.to('#exploded .sec-title', { opacity: 0, duration: .06, ease: 'none' }, .92);
 }, '460%');
-
-/* --- hero: perfect-loop idle drift (orbit resumes rotating when scrolling rests) --- */
-SEQS.orbit.loop = true;
-if (!REDUCED) {
-  let lastScrollAt = performance.now();
-  window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, { passive: true });
-  const heroEl = document.getElementById('hero');
-  gsap.ticker.add((tm, dt) => {
-    if (document.visibilityState !== 'visible') return;
-    if (performance.now() - lastScrollAt < 1400) return;          // user is scrolling
-    if (SEQS.orbit.loaded < SEQS.orbit.count) return;             // still streaming in
-    if (heroEl.getBoundingClientRect().bottom <= 0) return;       // hero offscreen
-    SEQS.orbit.drift = ((SEQS.orbit.drift || 0) + dt * 0.0075) % SEQS.orbit.count;
-    draw(SEQS.orbit);
-  });
-}
 
 /* --- static reveals (story, edition, waitlist) --- */
 document.querySelectorAll('.prose .reveal, #edition .reveal, #waitlist .reveal').forEach(el => {
